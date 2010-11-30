@@ -1,78 +1,69 @@
+/* -*- mode: js2; js2-basic-offset: 2; indent-tabs-mode: nil -*- */
+/**
+   This file is provided to you under the Apache License,
+   Version 2.0 (the "License"); you may not use this file
+   except in compliance with the License.  You may obtain
+   a copy of the License at
 
-//
-// This file is provided to you under the Apache License,
-// Version 2.0 (the "License"); you may not use this file
-// except in compliance with the License.  You may obtain
-// a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-// 
-// Unless required by applicable law or agreed to in writing,
-// software distributed under the License is distributed on an
-// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the
-// specific language governing permissions and limitations
-// under the License.
-//
+   http://www.apache.org/licenses/LICENSE-2.0
 
-//
-//  This is a Javascript client for the Riak REST API. It
-// has two dependencies:
-//
-// 1 - Douglas Crockford's JSON library: http://www.json.org/js.html
-//
-// 2 - jQuery: http://jquery.com/ (but only for Ajax requests)
-//
+   Unless required by applicable law or agreed to in writing,
+   software distributed under the License is distributed on an
+   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+   KIND, either express or implied.  See the License for the
+   specific language governing permissions and limitations
+   under the License.
+**/
 
+/**
+ * This is a Javascript client for the Riak REST API. It
+ * has two dependencies:
+ *   Douglas Crockford's JSON library: http://www.json.org/js.html
+ *   jQuery: http://jquery.com/ (but only for Ajax requests)
+ *
+ */
 
+/**
+ * TODO: Handle sibling values
+ */
 
-
-// **Start of Code Documentation**
-
-// 
-// Utility functions which don't belong anywhere else
-// 
+/**
+ * Utility functions which don't belong anywhere else
+ */
 var RiakUtil = function() {
   return {
-	//
-    // Base64 encode a number
-    //
-    // * @param num - Number to encode
-    //
-    // * @return string containing base64 encoded number
-    //
+    /**
+     * Base64 encode a number
+     * @param num - Number to encode
+     * @return string containing base64 encoded number
+     */
     base64Encode: function(num) {
       var base64digits = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
         return base64digits[(num >>> 26)] + base64digits[((num >>> 20)&63)] +
                base64digits[((num >>> 14)&63)] + base64digits[((num >>> 8)&63)] +
                base64digits[((num >>> 2)&63)] + base64digits[((num << 4)&63)] + '==';
     },
-	//
-    // Trim spaces from beginning/end of text
-    // 
-    // * @param text - Text to trimg
-    //
-    // * @return string with leading & trailing spaces removed
-	//
+    /**
+     * Trim spaces from beginning/end of text
+     * @param text - Text to trimg
+     * @return string with leading & trailing spaces removed
+     */
     trim: function(text) {
       var tmp = text.replace(/^\s+/, '');
       return tmp.replace(/\s+$/, '');
     },
 
-	//
-    // Was request successful?
-    //
-    // * @param req- XMLHttpRequest object
-    // 
-    // * @return true if status is 2xx, false otherwise
-	//
+    /**
+     * Was request successful?
+     * @param req- XMLHttpRequest object
+     * @return true if status is 2xx, false otherwise
+     */
     wasSuccessful: function(req) {
       return req.status > 199 && req.status < 300;
     },
-    
-	//
-    // **Create a modified accepts object**
-	//
+    /**
+     * Create a modified accepts object
+     */
     multipart_accepts: function() {
       var current = jQuery.ajaxSettings.accepts;
       var accepts = {};
@@ -88,21 +79,17 @@ var RiakUtil = function() {
         throw('Could not locate boundary for multipart/mixed');
       return contentType.substr(idx+9);
     },
-	
- 	// **_Parse a 300 request into siblings_**
-    // 
-	// This handles embedded
-    // new lines and control characters.  Unfortunately Firefox
-    // seems to trim embedded \000 in the XHR response.  Beware
-    // for binary data (images etc) you may need to set allow_mult
-    // false for the bucket until an alternative is found.
-    //
-	// * @param contentType content type header with boundary information
-    //
-	// * @param text body of 300 response to be split
-    //
-	// * @return true if status is 2xx, false otherwise
- 	//
+    /**
+     * Parse a 300 request into siblings.  This handles embedded
+     * new lines and control characters.  Unfortunately Firefox
+     * seems to trim embedded \000 in the XHR response.  Beware
+     * for binary data (images etc) you may need to set allow_mult
+     * false for the bucket until an alternative is found.
+     *
+     * @param contentType content type header with boundary information
+     * @param text body of 300 response to be split
+     * @return true if status is 2xx, false otherwise
+     */
     parseSiblings: function(contentType, text) {
       var prefixAt = function(idx, prefix) {
         return (text.substr(idx, prefix.length) === prefix);
@@ -156,15 +143,12 @@ var RiakUtil = function() {
   };
 }();
 
-//
-// **_Builds a map/reduce chain and executes it_**
-//
-// * @param client RiakClient object
-// 
-// * @param bucketName Riak bucket name
-// 
-// * @param key Riak bucket key (optional)
-//
+/**
+ * Builds a map/reduce chain and executes it
+ * @param client RiakClient object
+ * @param bucketName Riak bucket name
+ * @param key Riak bucket key (optional)
+ */
 function RiakMapper(client, bucketName, key) {
   if (bucketName === undefined ||
       client === undefined) {
@@ -176,56 +160,45 @@ function RiakMapper(client, bucketName, key) {
   this.phases = [];
 };
 
- //
- // **_Add a map phase to a map/reduce job_** 
- //
- // * @param options - Hash describing the map phase
- //
- // * @return RiakMapper instance for method chaining fun
- //
+/**
+ * Add a map phase to a map/reduce job
+ * @param options - Hash describing the map phase
+ * @return RiakMapper instance for method chaining fun
+ */
 RiakMapper.prototype.map = function(options) {
   this.phases.push(this._buildPhase({map: null}, options));
   return this;
 };
 
- //
- // **_Add a map phase to a map/reduce job_**
- // 
- // * @param options - Hash describing the reduce phase
- // 
- // * @return RiakMapper instance for method chaining fun
- //
+/**
+ * Add a map phase to a map/reduce job
+ * @param options - Hash describing the reduce phase
+ * @return RiakMapper instance for method chaining fun
+ */
 RiakMapper.prototype.reduce = function(options) {
   this.phases.push(this._buildPhase({reduce: null}, options));
   return this;
 };
 
- //
- // **_Add a link phase to a map/reduce job_**
- //
- // @param options - Hash describing the link phase
- //
+/**
+ * Add a link phase to a map/reduce job
+ * @param options - Hash describing the link phase
+ */
 RiakMapper.prototype.link = function(options) {
   this.phases.push(this._buildPhase({link: null}, options));
   return this;
 };
 
- //
- // **_Runs a map/reduce job_**
- // 
- // * @param timeout - Job timeout (in milliseconds). Defaults to 60000
- //
- // * @param callback - Function to call when op completes
- // 
- // * callback - function(success, request, results)
- //
- // * @param success - Boolean indicating success or failure
- //
- // * @param results - JSON decoded results or null
- //
- // * @param request - XMLHttpRequest object
- //
-
+/**
+ * Runs a map/reduce job
+ * @param timeout - Job timeout (in milliseconds). Defaults to 60000
+ * @param callback - Function to call when op completes
+ *
+ * callback - function(success, request, results)
+ * @param success - Boolean indicating success or failure
+ * @param results - JSON decoded results or null
+ * @param request - XMLHttpRequest object
+ */
 RiakMapper.prototype.run = function(timeout, callback) {
   if (timeout === undefined || timeout === null) {
     timeout = 60000;
@@ -257,20 +230,17 @@ RiakMapper.prototype.run = function(timeout, callback) {
 						       } } } });
 };
 
-// **Start RiakMapper internals** 
-
+/** Start RiakMapper internals **/
 RiakMapper.prototype._buildPhase = function(starter, options) {
   if (typeof options.source === 'function') {
       source = options.source;
       try
       {
- 		// **_Create a string with minimal padding_**
-        // 
-		// JSON.parse
-        // does not like embedded newlines in strings
-        // and function.toString() on FireFox (on 3.6.3) generates
-        // a string with embedded newlines.
-		//
+        /* Create a string with minimal padding - JSON.parse
+         * does not like embedded newlines in strings
+         * and function.toString() on FireFox (on 3.6.3) generates
+         * a string with embedded newlines.
+         */
         options.source = source.toString(-1);
       }
       catch (e)
@@ -305,23 +275,17 @@ RiakMapper.prototype._buildInputs = function() {
     return this.bucket;
   }
 }
-// _End RiakMapper internals_
+/** End RiakMapper internals **/
 
-// 
-// **_Models an entry in a Riak bucket_** 
-// 
-// * @param bucketName - Riak bucket name
-//
-// * @param key - Object's key
-//
-// * @param client - Owning RiakClient
-//
-// * @param body - Object's data
-//
-// * @param contentType - Mime type associated with data
-//
-// * @param vclock - Riak-assigned vclock
-//
+/**
+ * Models an entry in a Riak bucket
+ * @param bucketName - Riak bucket name
+ * @param key - Object's key
+ * @param client - Owning RiakClient
+ * @param body - Object's data
+ * @param contentType - Mime type associated with data
+ * @param vclock - Riak-assigned vclock
+ */
 function RiakObject(bucketName, key, client, body, contentType, vclock) {
   if (client === undefined) {
     throw("Cannot construct RiakObject without a client reference");
@@ -355,18 +319,13 @@ function RiakObject(bucketName, key, client, body, contentType, vclock) {
   this.links = [];
 };
 
- //
- // **_'Hydrates' a RiakObject from a HTTP request_**
- // 
- // * @param bucket - Riak bucket name
- //
- // * @param key - Riak bucket key
- // 
- // * @param client - Owning RiakClient
- // 
- // * @param req - XMLHttpRequest
- //
-
+/**
+ * 'Hydrates' a RiakObject from a HTTP request
+ * @param bucket - Riak bucket name
+ * @param key - Riak bucket key
+ * @param client - Owning RiakClient
+ * @param req - XMLHttpRequest
+ */
 RiakObject.fromRequest = function(bucket, key, client, req) {
   var contentType = req.getResponseHeader('Content-Type');
   var vclock = req.getResponseHeader('X-Riak-Vclock');
@@ -383,42 +342,40 @@ RiakObject.fromMultipart = function(bucket, key, client, vclock, multipartChunk)
   return retval;
 }
 
- //
- // **_Begins building a map/reduce job which will use the current object as input_**
- // 
- // * @param options - Hash description the map phase
- //
+/**
+ * Begins building a map/reduce job which will
+ * use the current object as input
+ * @param options - Hash description the map phase
+ */
 RiakObject.prototype.map = function(options) {
   var mapper = new RiakMapper(this.client, this.bucket, this.key);
   return mapper.map(options);
 };
 
- //
- // **_Begins building a map/reduce job which will use the current object as input_**
- //
- // * @param options - Hash description the reduce phase
- // 
-
+/**
+ * Begins building a map/reduce job which will
+ * use the current object as input
+ * @param options - Hash description the reduce phase
+ */
 RiakObject.prototype.reduce = function(options) {
   var mapper = new RiakMapper(this.client, this.bucket, this.key);
   return mapper.reduce(options);
 };
 
- //
- // **_Begins building a map/reduce job which will use the current object as input_**
- //
- // * @param options - Hash description the link phase
- //
+/**
+ * Begins building a map/reduce job which will
+ * use the current object as input
+ * @param options - Hash description the link phase
+ */
 RiakObject.prototype.link = function(options) {
   var mapper = new RiakMapper(this.client, this.bucket, this.key);
   return mapper.link(options);
 };
 
- //
- // **_Parses a raw link header and populates the links array_**
- // 
- // * @param linkHeader - Raw link header string
- // 
+/**
+ * Parses a raw link header and populates the links array
+ * @param linkHeader - Raw link header string
+ */
 RiakObject.prototype.setLinks = function(linkHeader) {
   var parsedLinks = new Array();
   if (linkHeader != '') {
@@ -437,21 +394,18 @@ RiakObject.prototype.setLinks = function(linkHeader) {
   this.links = parsedLinks;
 };
 
- //
- // **_Retrieves the links collection_**
- // 
- // * @return Array of link hashes (e.g. [{tag: 'userInfo', target: '/riak/users/bob'}])
- //
+/**
+ * Retrieves the links collection
+ * @return Array of link hashes (e.g. [{tag: 'userInfo', target: '/riak/users/bob'}])
+ */
 RiakObject.prototype.getLinks = function() {
   return this.links;
 };
 
- // 
- // **_Returns the links formatted for the Link header_**
- // 
- // * @return - Link header string
- //
-
+/**
+ * Returns the links formatted for the Link header
+ * @return - Link header string
+ */
 RiakObject.prototype.getLinkHeader = function() {
   if (this.links.length == 0) {
     return '';
@@ -471,17 +425,13 @@ RiakObject.prototype.getLinkHeader = function() {
   return header.replace(/,\s$/, '');
 };
 
- // 
- // **_Adds a link to the object's link collection_**
- // 
- // * @param link - Pointer to other object (e.g. /riak/foo/bar)
- // 
- // * @param tag - Tag for the link (e.g. 'userInfo')
- // 
- // * @param noDuplicates - Toggle duplicate checking on/off
- // 
- // * @return true if added, false otherwise
- //
+/**
+ * Adds a link to the object's link collection
+ * @param link - Pointer to other object (e.g. /riak/foo/bar)
+ * @param tag - Tag for the link (e.g. 'userInfo')
+ * @param noDuplicates - Toggle duplicate checking on/off
+ * @return true if added, false otherwise
+ */
 RiakObject.prototype.addLink = function(link, tag, noDuplicates) {
   if (link.indexOf('/') == -1) {
     throw('Invalid link: ' + link);
@@ -507,15 +457,13 @@ RiakObject.prototype.addLink = function(link, tag, noDuplicates) {
   return retval;
 };
 
-
- // **_Removes a link from the links collection based on link and tag_**
- //
- // * @param link - Pointer to other object
- // 
- // * @param tag - Tag for the link
- //
- // * @return true if link removed, false if not
-
+/**
+ * Removes a link from the links collection based on
+ * link and tag
+ * @param link - Pointer to other object
+ * @param tag - Tag for the link
+ * @return true if link removed, false if not
+ */
 RiakObject.prototype.removeLink = function(link, tag) {
   var retval = false;
   var newLinks = this.links.filter(function(l) { return l.link !== link || l.tag !== tag; });
@@ -526,24 +474,22 @@ RiakObject.prototype.removeLink = function(link, tag) {
   return retval;
 };
 
-
- // **_Resets the links collection to an empty array_**
-
+/**
+ * Resets the links collection to an empty array
+ */
 RiakObject.prototype.clearLinks = function() {
   this.links = [];
 };
 
 
-
- // **_Deletes an object from a Riak bucket_**
- // @param callback - Function to call when op complete
- //
- // * callback - function(success, request)
- //
- // * @param success - Boolean flag indicating successful removal
- // 
- // * @param request - XMLHTTPRequest object
-
+/**
+ * Deletes an object from a Riak bucket
+ * @param callback - Function to call when op complete
+ *
+ * callback - function(success, request)
+ * @param success - Boolean flag indicating successful removal
+ * @param request - XMLHTTPRequest object
+ */
 RiakObject.prototype.remove = function(callback) {
   var object = this;
   jQuery.ajax({url: this.client._buildPath('DELETE', this.bucket, this.key),
@@ -565,24 +511,19 @@ RiakObject.prototype.remove = function(callback) {
 						     } }});
 };
 
-
- // **_Store the object in Riak_**
- // 
- // * @param callback - Function to call when op completes
- //
- // * callback - function(status, object, request);
- //
- // * @param status - 'status' of the result: 'ok', 'failed', or 'siblings'
- //
- // * @param object - If status is 'ok', object is an updated RiakObject instance
- //
- // If status is 'siblings', object is an array of RiakObject instances 
- // which the client can pick from to resolve the conflict. If status is 'failed', object is null
- //
- // NOTE: Use the updated version to prevent siblings & vector clock explosion
- // 
- // * @param request - XMLHttpRequest object
-
+/**
+ * Store the object in Riak
+ * @param callback - Function to call when op completes
+ *
+ * callback - function(status, object, request)
+ * @param status - 'status' of the result: 'ok', 'failed', or 'siblings'
+ * @param object - If status is 'ok', object is an updated RiakObject instance
+ *                 If status is 'siblings', object is an array of RiakObject instances
+ *                 which the client can pick from to resolve the conflict
+ *                 If status is 'failed', object is null
+ *                 NOTE: Use the updated version to prevent siblings & vector clock explosion
+ * @param request - XMLHttpRequest object
+ */
 RiakObject.prototype.store = function(callback) {
   if (this.contentType === null) {
     throw('RiakObject missing contentType');
@@ -618,7 +559,7 @@ RiakObject.prototype.store = function(callback) {
 	  complete: function(req, statusText) { object._store(req, callback); } });
 };
 
- // Start RiakObject Internals 
+/** Start RiakObject Internals **/
 RiakObject.prototype._store = function(req, callback) {
   if (req.readyState != 4) {
     return;
@@ -648,15 +589,13 @@ RiakObject.prototype._store = function(req, callback) {
   }
 };
 
- // _End RiakObject Internals_
+/** End RiakObject Internals **/
 
-
- // **_Models a Riak bucket_**
- //
- // * @param bucket - Riak bucket name
- //
- // * @param client - RiakClient reference
-
+/**
+ * Models a Riak bucket
+ * @param bucket - Riak bucket name
+ * @param client - RiakClient reference
+ */
 function RiakBucket(bucket, client, props) {
   if (client === undefined) {
     throw("Cannot construct RiakBucket without client reference");
@@ -671,64 +610,57 @@ function RiakBucket(bucket, client, props) {
   }
 };
 
-
- // **_"Hydrates" a RiakBucket from a HTTP request_**
- // 
- // * @param bucketName - Riak bucket name (duh!)
- //
- // * @param client - RiakClient object
- //  
- // * @param req - Active XMLHttpRequest object
- //
- // * @return populated RiakBucket instance
-
+/**
+ * "Hydrates" a RiakBucket from a HTTP request
+ * @param bucketName - Riak bucket name (duh!)
+ * @param client - RiakClient object
+ * @param req - Active XMLHttpRequest object
+ * @return populated RiakBucket instance
+ */
 RiakBucket.fromRequest = function(bucketName, client, req) {
   var props = JSON.parse(req.responseText);
   return new RiakBucket(bucketName, client, props);
 };
 
- // **_Begins building a map/reduce job which will use the entire bucket contents as input_**
- // 
- // * @param options - Hash description the map phase
- //  
- // * @return RiakMapper object
-
+/**
+ * Begins building a map/reduce job which will
+ * use the entire bucket contents as input
+ * @param options - Hash description the map phase
+ * @return RiakMapper object
+ */
 RiakBucket.prototype.map = function(options) {
   var mapper = new RiakMapper(this.client, this.name);
   return mapper.map(options);
 };
 
-
- // **_Begins building a map/reduce job which will use the entire bucket contents as input_**
- //  
- // * @param options - Hash description the reduce phase
- // 
- // * @return RiakMapper object
-
+/**
+ * Begins building a map/reduce job which will
+ * use the entire bucket contents as input
+ * @param options - Hash description the reduce phase
+ * @return RiakMapper object
+ */
 RiakBucket.prototype.reduce = function(options) {
   var mapper = new RiakMapper(this.client, this.name);
   return mapper.reduce(options);
 };
 
-
- // **_Begins building a map/reduce job which will use the entire bucket contents as input_**
- //
- // * @param options - Hash description the link phase
- //  
- // * @return RiakMapper object
-
+/**
+ * Begins building a map/reduce job which will
+ * use the entire bucket contents as input
+ * @param options - Hash description the link phase
+ * @return RiakMapper object
+ */
 RiakBucket.prototype.link = function(options) {
   var mapper = new RiakMapper(this.client, this.name);
   options.bucket = this.name;
   return mapper.link(options);
 };
 
- // **_Sets/gets the nValue for this bucket_**
- //
- // * @param n -- New nValue (optional)
- //
- // * @return the current nValue
-
+/**
+ * Sets/gets the nValue for this bucket
+ * @param n -- New nValue (optional)
+ * @return the current nValue
+ */
 RiakBucket.prototype.nValue = function(n) {
   var retval = this.props.n_val;
   if (n !== undefined) {
@@ -738,12 +670,11 @@ RiakBucket.prototype.nValue = function(n) {
   return retval;
 };
 
- // **_Enables/disables multiple bucket entries_**
- //
- // * @param flag -- true or false
- //  
- // * @return the current setting
-
+/**
+ * Enables/disables multiple bucket entries
+ * @param flag -- true or false
+ * @return the current setting
+ */
 RiakBucket.prototype.allowsMultiples = function(flag) {
   var retval = this.props.allow_mult;
   if (flag !== undefined) {
@@ -753,17 +684,14 @@ RiakBucket.prototype.allowsMultiples = function(flag) {
   return retval;
 };
 
-
- // **_Stores bucket_**
- //
- // * @param callback - Function to call when op has completed
- //
- // * callback - function(bucket, request)
- // 
- // * @param bucket - Updated bucket or null if store failed
- // 
- // * @param request - XMLHTTPRequest object
-
+/**
+ * Stores bucket
+ * @param callback - Function to call when op has completed
+ *
+ * callback - function(bucket, request)
+ * @param bucket - Updated bucket or null if store failed
+ * @param request - XMLHTTPRequest object
+ */
 RiakBucket.prototype.store = function(callback) {
   var bucket = this;
   var currentProps = {};
@@ -779,19 +707,15 @@ RiakBucket.prototype.store = function(callback) {
 	  complete: function(req, statusText) { bucket._store(req, callback); } });
 };
 
-
- // **_Fetch an entry from the bucket_**
- //
- // * @param key - Riak bucket key
- //
- // * @param callback - Function to call when op has completed
- //
- // * callback - function(object, request)
- //
- // * @param object - RiakObject if found, otherwise null
- //
- // * @param request - XMLHTTPRequest object
-
+/**
+ * Fetch an entry from the bucket
+ * @param key - Riak bucket key
+ * @param callback - Function to call when op has completed
+ *
+ * callback - function(object, request)
+ * @param object - RiakObject if found, otherwise null
+ * @param request - XMLHTTPRequest object
+ */
 RiakBucket.prototype.get = function(key, callback) {
   var bucket = this;
   jQuery.ajax({url: this.client._buildPath('GET', this.name, key),
@@ -804,19 +728,16 @@ RiakBucket.prototype.get = function(key, callback) {
 	  complete: function(req, statusText) { bucket._handleGetObject(key, req, callback, false); } });
 };
 
-
- // **_Fetch an entry from the bucket or create a new oneif not found//
- //
- // * @param key - Riak bucket key
- //
- // * @param callback - Function to call when op has completed
- //
- // * callback - function(object, request)
- //
- // * @param object - RiakObject instance
- //
- // * @param request - XMLHTTPRequest object
-
+/**
+ * Fetch an entry from the bucket or create a new one
+ * if not found
+ * @param key - Riak bucket key
+ * @param callback - Function to call when op has completed
+ *
+ * callback - function(object, request)
+ * @param object - RiakObject instance
+ * @param request - XMLHTTPRequest object
+ */
 RiakBucket.prototype.get_or_new = function(key, callback) {
   var bucket = this;
   jQuery.ajax({url: this.client._buildPath('GET', this.name, key),
@@ -829,19 +750,15 @@ RiakBucket.prototype.get_or_new = function(key, callback) {
 	  complete: function(req, statusText) { bucket._handleGetObject(key, req, callback, true); } });
 };
 
-
- // **_Deletes an object from a Riak bucket_** 
- // 
- // * @param key - Riak bucket key
- //
- // * @param callback - Function to call when op complete
- //
- // * callback - function(success, request)
- //
- // * @param success - Boolean flag indicating successful removal
- //
- // * @param request - XMLHTTPRequest object
-	
+/**
+ * Deletes an object from a Riak bucket
+ * @param key - Riak bucket key
+ * @param callback - Function to call when op complete
+ *
+ * callback - function(success, request)
+ * @param success - Boolean flag indicating successful removal
+ * @param request - XMLHTTPRequest object
+ */
 RiakBucket.prototype.remove = function(key, callback) {
   var bucket = this;
   jQuery.ajax({url: this.client._buildPath('DELETE', bucket.name, key),
@@ -863,7 +780,7 @@ RiakBucket.prototype.remove = function(key, callback) {
 						     } }});
 };
 
-// **Start RiakBucket internals**
+/** Start RiakBucket internals **/
 
 RiakBucket.prototype._store = function(req, callback) {
   if (req.readyState != 4) {
@@ -896,9 +813,9 @@ RiakBucket.prototype._handleGetObject = function(key, req, callback, createEmpty
         status = 'ok';
         object = new RiakObject(this.name, key, this.client);
       }
-   // must not create empty return failed/null
+      /* must not create empty return failed/null */
     }
-   // Uh-oh, we've got siblings! 
+    /* Uh-oh, we've got siblings! */
     else if (req.status == 300) {
       var siblingData = RiakUtil.parseSiblings(req.getResponseHeader('Content-Type'),
 					       req.responseText);
@@ -918,16 +835,14 @@ RiakBucket.prototype._handleGetObject = function(key, req, callback, createEmpty
   }
 };
 
- // _End RiakBucket internals_
+/** End RiakBucket internals **/
 
 
-
- // **_Entry point for interacting with Riak_**
- //
- // * @param baseUrl - URL for 'raw' interface (optional, default: '/riak')
- // 
- // * @param mapredUrl - URL for map/reduce jobs (optional, default: '/mapred')
-
+/**
+ * Entry point for interacting with Riak
+ * @param baseUrl - URL for 'raw' interface (optional, default: '/riak')
+ * @param mapredUrl - URL for map/reduce jobs (optional, default: '/mapred')
+ */
 function RiakClient(baseUrl, mapredUrl) {
   if (baseUrl === undefined) {
     baseUrl = '/riak/';
@@ -950,21 +865,16 @@ function RiakClient(baseUrl, mapredUrl) {
   }
 };
 
-
- // **_Fetches a bucket from Riak_**
- //
- // Buckets *always* exist so no need to handle
- //
- // * @param bucket Riak bucket name
- //
- // * @param callback Function to call when op completes
- //
- // * callback - function(bucket, request)
- //
- // * @param bucket - RiakBucket instance
- //
- // * @param request - XMLHTTPRequest object
-
+/**
+ * Fetches a bucket from Riak
+ * Buckets *always* exist so no need to handle
+ * @param bucket Riak bucket name
+ * @param callback Function to call when op completes
+ *
+ * callback - function(bucket, request)
+ * @param bucket - RiakBucket instance
+ * @param request - XMLHTTPRequest object
+ */
 RiakClient.prototype.bucket = function(bucket, callback) {
   var client = this;
   jQuery.ajax({url: this._buildPath('GET', bucket),
@@ -977,10 +887,7 @@ RiakClient.prototype.bucket = function(bucket, callback) {
 	  complete: function(req, statusText) { client._handleGetBucket(bucket, req, callback, false); } });
 };
 
-//
-//**Start of the RiakClient internal functions 
-//
-
+/** Begin RiakClient internal functions **/
 RiakClient.prototype._handleGetBucket = function(bucketName, req, callback, createEmpty) {
   var bucket = null;
   if (req.readyState != 4) {
@@ -996,12 +903,11 @@ RiakClient.prototype._handleGetBucket = function(bucketName, req, callback, crea
 
 RiakClient.prototype._buildPath = function(method, bucket, key) {
   var path = this.baseUrl + bucket;
-
-  // Reluctantly adding a cache breaker to each request.  FireFox
-  // sometimes caches XHR responses which triggers failures in the
-  // unit tests (and presumably real code).  See 'bypassing the cache'
-  // in https://developer-stage.mozilla.org/En/Using_XMLHttpRequest
-
+  /* Reluctantly adding a cache breaker to each request.  FireFox
+  ** sometimes caches XHR responses which triggers failures in the
+  ** unit tests (and presumably real code).  See 'bypassing the cache'
+  ** in https://developer-stage.mozilla.org/En/Using_XMLHttpRequest
+  */
   var cache_breaker = Math.floor(Math.random() * 4294967296).toString();
   if (key !== undefined) {
     path = path + '/' + key + "?" + cache_breaker;
@@ -1018,4 +924,4 @@ RiakClient.prototype._buildPath = function(method, bucket, key) {
   return path;
 };
 
-// **End RiakClient internal Functions **
+/** End RiakClient internal Functions **/
