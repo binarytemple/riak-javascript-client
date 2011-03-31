@@ -64,7 +64,6 @@ the HTTP interface
 
    2. To install the test environment, run the setup script in the
       tests directory with the -i option:
-
       : cd tests;./setup -i
 
    3. You can now run the unit tests by pointing your browser to the
@@ -74,12 +73,10 @@ the HTTP interface
 
    4. You can clean out any transient test data by running the setup
       script with the -c option:
-
       : cd tests;./setup -c
 
    5. Finally, you can remove the test environment by running setup
       again with the -u option:
-    
       : cd tests;./setup -u
 
 ** Contributing
