@@ -327,34 +327,34 @@ function badMap() {
 
 function runTests() {
   module("Storage");
-  test("Create", 2, createMissingObject);
-  test("Store", 3, storeMissingObject);
-  test("Create", 2, createMissingObject);
-  test("Update", 4, updateObject);
-  test("Siblings", 11, resolveSiblings);
-  test("Delete", 2, deleteObject);
-  test("Get Missing", 2, lookupMissingObject);
+  // test("Create", 2, createMissingObject);
+  // test("Store", 3, storeMissingObject);
+  // test("Create", 2, createMissingObject);
+  // test("Update", 4, updateObject);
+  // test("Siblings", 11, resolveSiblings);
+  // test("Delete", 2, deleteObject);
+  // test("Get Missing", 2, lookupMissingObject);
 
   module("Links");
-  test("Create", 2, createMissingObject);
-  test("Update", 6, storeLink);
-  test("Delete", 2, deleteLink);
+  // test("Create", 2, createMissingObject);
+  // test("Update", 6, storeLink);
+  // test("Delete", 2, deleteLink);
 
   module("Bucket Properties");
-  test("N-Value", 1, readNValue);
-  test("Update N-Value", 2, updateNValue);
-  test("Allow Multiples", 1, readAllowMult);
-  test("Update Allow Multiples", 2, updateAllowMult);
+  // test("N-Value", 1, readNValue);
+  // test("Update N-Value", 2, updateNValue);
+  // test("Allow Multiples", 1, readAllowMult);
+  // test("Update Allow Multiples", 2, updateAllowMult);
 
   module("Map/Reduce");
-  test("Bucket-level map", 3, bucketMap);
-  test("Bucket-level map/reduce", 4, bucketMapReduce);
-  test("Object-level map", 5, objectMap);
-  test("Object-level map/reduce", 5, objectMapReduce);
+  // test("Bucket-level map", 3, bucketMap);
+  // test("Bucket-level map/reduce", 4, bucketMapReduce);
+  // test("Object-level map", 5, objectMap);
+  // test("Object-level map/reduce", 5, objectMapReduce);
   test("Bad Map job", 4, badMap);
 
   module("Link walking");
-  test("Bucket-level link walk", 3, bucketLinkWalk);
+  // test("Bucket-level link walk", 3, bucketLinkWalk);
 }
 
 $(document).ready(runTests);
